@@ -1,5 +1,32 @@
 import math
 import pdb
+import HTMLParser
+
+class MyHTMLParser( HTMLParser.HTMLParser):
+    categoryValues = {}
+    currentCategory = ""
+    firstTime = True;
+    listOfPairs = []
+    def handle_starttag(self, tag, attrs):
+        #print("Start tag:", tag)
+        if (tag == 'variable'):            
+            for (name, category )in attrs:
+                #print("Category" + category)
+                if(self.firstTime == True ):
+                    self.currentCategory = category;
+                else:
+                    self.currentCategory = category;
+                    self.listOfPairs = []                                                                                                                                                  
+        elif(tag == 'group'):
+                listOfAttributes = []               
+                for (name, groupName )in attrs:
+                    listOfAttributes.append(groupName)
+                    #print("Groupname" + groupName)                                       
+                pairValues = (listOfAttributes[0],listOfAttributes[1])
+                #print("pair" + pairValues[0] + " " + pairValues[1])  
+                self.categoryValues[self.currentCategory] = self.listOfPairs             
+                self.listOfPairs.append(pairValues)   
+        self.firstTime = False;                                                   
 
 class Node:
     def __init__(self, isLeaf, label, threshold):
@@ -19,21 +46,29 @@ class C45:
         self.atts = -1
         self.tree = None
 
-    def fetcher(self):
+    def fetcher(self):       
         with open(self.names, "r") as file:
-            classes = file.readline()
-            self.classes = [x.strip() for x in classes.strip(",")]
+            parser = MyHTMLParser()
             for line in file:
-                [attribute, values] = [x.strip() for x in line.split(":")]
-                values = [x.strip() for x in values.split(",")]
-                self.avals[attribute] = values
-        self.atts = len(self.avals.keys())
-        self.att = list(self.avals.keys())
-        with open(self.data, "r") as file:
-            for line in file:
-                row = [x.strip() for x in line.split(",")]
-                if row != [] or row != [""]:
-                    self.items.append(row)
+                parser.feed(line)
+                
+            print parser.categoryValues.__len__()
+            for key in parser.categoryValues.keys():
+                print key
+                print(parser.categoryValues[key])
+            #classes = file.readline()
+            #self.classes = [x.strip() for x in classes.strip(",")]
+            #for line in file:
+             #   [attribute, values] = [x.strip() for x in line.split(":")]
+              #  values = [x.strip() for x in values.split(",")]
+              #  self.avals[attribute] = values
+        #self.atts = len(self.avals.keys())
+        #self.att = list(self.avals.keys())
+        #with open(self.data, "r") as file:
+        #    for line in file:
+         #       row = [x.strip() for x in line.split(",")]
+         #       if row != [] or row != [""]:
+         #           self.items.append(row)
     
     def processData(self):
         for index in enumerate(self.items):
@@ -182,8 +217,8 @@ class C45:
 
 
 if __name__ == "__main__":
-    c = C45("iris/iris.data", "iris/iris.names")
+    c = C45("iris/iris.names", "domain.xml")
     c.fetcher()
-    c.processData()
-    c.generateTree()
-    c.printTree()
+    ##c.processData()
+    ##c.generateTree()
+    ##c.printTree()
