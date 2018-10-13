@@ -77,7 +77,8 @@ class C45:
                     classAttributes.append(pairs[0])
                 self.avals[attributeKey] = values 
                  
-        self.classes = classAttributes
+        #self.classes = classAttributes
+        self.classes = parser.categoryValues.keys()
         self.atts = len(self.avals.keys())
         self.att = list(self.avals.keys())       
         lineCount = 0
@@ -97,9 +98,11 @@ class C45:
                     self.items[index][aindex] = float(self.items[index][aindex])
     
     def generateTree(self):
+        print "generateTree"
         self.tree = self.rTree(self.items, self.att)
 
     def rTree(self, data, attributes):
+        print "rTree"
         same = self.allsame(data)
         if len(data) == 0:
             return Node(True, "Fail", None)
@@ -109,11 +112,14 @@ class C45:
             majClass = self.getMajClass(data)
             return Node(True, majClass, None)
         else:
+            print "data before split"
+            print data
             (best, bestt, split) = self.splitter(data, attributes)
             rest = attributes[:]
             print "attributes"
             print attributes
             print best
+            print bestt
             rest.remove(best)
 
             node = Node(False, best, bestt)
@@ -147,19 +153,27 @@ class C45:
         maxEnt = -1 * float("inf")
         ideala = -1
         idealt = None
+        print "splitter"
+        print(data)
+        print "splitter attributes:"
+        print Attributes
+        
         for a in Attributes:
             index = self.att.index(a)
             if self.discrete(a):
                 values = self.avals[a]
+                print "splitterValues"
+                print(values)
                 subsets = [[] for a in values]
                 for r in data:
-                    print("data")
                     print(r)
                     for i in range(len(values)):
                         if r[i] == values[i]:
                             subsets[i].append(r)
                             break
                 e = self.gain(data, subsets)
+                print("gain:")
+                print(e)                
                 if e > maxEnt:
                     maxEnt = e
                     split = subsets
@@ -178,6 +192,8 @@ class C45:
                             else:
                                 less.append(row)
                         e = self.gain(data, [less, great])
+                        print("gain:")
+                        print(e)
                         if e >= maxEnt:
                             split = [less, great]
                             maxEnt = e
@@ -188,10 +204,14 @@ class C45:
     def gain(self, set, subsets):
         S = len(set)
         prior = self.entropy(set)
+        print prior
         weights = [len(subset) / S for subset in subsets]
+        print(len(subset))
         after = 0
         for i in range(len(subsets)):
             after += weights[i] * self.entropy(subsets[i])
+            print "gain weights"
+            print weights[i]
         totalGain = prior - after
         return totalGain
 
@@ -247,7 +267,7 @@ class C45:
 
 
 if __name__ == "__main__":
-    c = C45("tree02/tree02-20-words.csv", "domain.xml")
+    c = C45("tree03/tree03-20-words.csv", "domain.xml")
     c.fetcher()
     c.processData()
     c.generateTree()
