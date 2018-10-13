@@ -8,10 +8,8 @@ class MyHTMLParser( HTMLParser.HTMLParser):
     firstTime = True;
     listOfPairs = []
     def handle_starttag(self, tag, attrs):
-        #print("Start tag:", tag)
         if (tag == 'variable'):            
             for (name, category )in attrs:
-                #print("Category" + category)
                 if(self.firstTime == True ):
                     self.currentCategory = category;
                 else:
@@ -23,7 +21,22 @@ class MyHTMLParser( HTMLParser.HTMLParser):
                     listOfAttributes.append(groupName)                                                          
                 pairValues = (listOfAttributes[0],listOfAttributes[1])            
                 self.categoryValues[self.currentCategory] = self.listOfPairs             
-                self.listOfPairs.append(pairValues)   
+                self.listOfPairs.append(pairValues)
+        elif(tag == 'category'):
+            for (name, category )in attrs:
+                if(self.firstTime == True ):
+                    self.currentCategory = category;
+                else:
+                    self.currentCategory = category;
+                    self.listOfPairs = []
+        elif(tag == 'choice'):
+                listOfAttributes = []               
+                for (name, groupName )in attrs:
+                    listOfAttributes.append(groupName)                                                          
+                pairValues = (listOfAttributes[0],listOfAttributes[1])            
+                self.categoryValues[self.currentCategory] = self.listOfPairs             
+                self.listOfPairs.append(pairValues) 
+                              
         self.firstTime = False;                                                   
 
 class Node:
@@ -48,8 +61,11 @@ class C45:
         with open(self.names, "r") as file:
             parser = MyHTMLParser()
             #HTML Parser
+            
             for line in file:
-                parser.feed(line)                
+                parser.feed(line) 
+            self.classes = parser.categoryValues.keys()
+                           
             for key in parser.categoryValues.keys():
                 print key
                 print(parser.categoryValues[key])
@@ -177,7 +193,12 @@ class C45:
         if S == 0:
             return 0
         nclass = [0 for i in self.classes]
+        for i in self.classes:
+            print "classes"
+            print i
         for i in dat:
+            print ("dat")
+            print (i)
             classIndex = list(self.classes).index(i[-1])
             nclass[classIndex] += 1
         nclass = [x / S for x in nclass]
