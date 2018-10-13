@@ -62,6 +62,7 @@ class C45:
         self.atts = len(self.avals.keys())
         self.att = list(self.avals.keys())       
         lineCount = 0
+        
         with open(self.data, "r") as file:
             for line in file:
                 lineCount += 1
@@ -74,7 +75,7 @@ class C45:
     def processData(self):
         for index in enumerate(self.items):
             for aindex in range(self.atts):
-                if(not self.discrete(self.atts[aindex])):
+                if(not self.discrete(self.att[aindex])):
                     self.items[index][aindex] = float(self.items[index][aindex])
     
     def generateTree(self):
@@ -112,7 +113,7 @@ class C45:
         return data[0][-1]
 
     def discrete(self, attribute):
-        if attribute not in self.atts:
+        if attribute not in self.att:
             raise ValueError("Attributes not listed")
         elif len(self.avals[attribute]) == 1 and self.avals[attribute][0] == "continuous":
             return False
@@ -125,7 +126,7 @@ class C45:
         ideala = -1
         idealt = None
         for a in Attributes:
-            index = self.atts.index(a)
+            index = self.att.index(a)
             if self.discrete(a):
                 values = self.avals[a]
                 subsets = [[] for a in values]
@@ -221,5 +222,5 @@ if __name__ == "__main__":
     c = C45("tree02/tree02-20-words.csv", "domain.xml")
     c.fetcher()
     c.processData()
-    ##c.generateTree()
+    c.generateTree()
     ##c.printTree()
