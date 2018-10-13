@@ -52,10 +52,9 @@ class C45:
             for line in file:
                 parser.feed(line)
                 
-            print parser.categoryValues.__len__()
-            for key in parser.categoryValues.keys():
-                print key
-                print(parser.categoryValues[key])
+            #for key in parser.categoryValues.keys():
+                #print key
+                #print(parser.categoryValues[key])
             #classes = file.readline()
             #self.classes = [x.strip() for x in classes.strip(",")]
             #for line in file:
@@ -63,12 +62,16 @@ class C45:
               #  values = [x.strip() for x in values.split(",")]
               #  self.avals[attribute] = values
         #self.atts = len(self.avals.keys())
-        #self.att = list(self.avals.keys())
-        #with open(self.data, "r") as file:
-        #    for line in file:
-         #       row = [x.strip() for x in line.split(",")]
-         #       if row != [] or row != [""]:
-         #           self.items.append(row)
+        #self.att = list(self.avals.keys())       
+        lineCount = 0
+        with open(self.data, "r") as file:
+            for line in file:
+                lineCount += 1
+                if(lineCount > 3):
+                    print(line)
+                row = [x.strip() for x in line.split(",")]
+                if row != [] or row != [""]:
+                    self.items.append(row)
     
     def processData(self):
         for index in enumerate(self.items):
@@ -217,7 +220,7 @@ class C45:
 
 
 if __name__ == "__main__":
-    c = C45("iris/iris.names", "domain.xml")
+    c = C45("tree02/tree02-20-words.csv", "domain.xml")
     c.fetcher()
     ##c.processData()
     ##c.generateTree()
