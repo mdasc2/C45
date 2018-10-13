@@ -67,10 +67,9 @@ class C45:
             for line in file:
                 lineCount += 1
                 if(lineCount > 3):
-                    print(line)
-                row = [x.strip() for x in line.split(",")]
-                if row != [] or row != [""]:
-                    self.items.append(row)
+                    row = [x.strip() for x in line.split(",")]
+                    if row != [] or row != [""]:
+                        self.items.append(row)
     
     def processData(self):
         for index in enumerate(self.items):
@@ -131,6 +130,8 @@ class C45:
                 values = self.avals[a]
                 subsets = [[] for a in values]
                 for r in data:
+                    print("data")
+                    print(r)
                     for i in range(len(values)):
                         if r[i] == values[i]:
                             subsets[i].append(r)
