@@ -20,10 +20,8 @@ class MyHTMLParser( HTMLParser.HTMLParser):
         elif(tag == 'group'):
                 listOfAttributes = []               
                 for (name, groupName )in attrs:
-                    listOfAttributes.append(groupName)
-                    #print("Groupname" + groupName)                                       
-                pairValues = (listOfAttributes[0],listOfAttributes[1])
-                #print("pair" + pairValues[0] + " " + pairValues[1])  
+                    listOfAttributes.append(groupName)                                                          
+                pairValues = (listOfAttributes[0],listOfAttributes[1])            
                 self.categoryValues[self.currentCategory] = self.listOfPairs             
                 self.listOfPairs.append(pairValues)   
         self.firstTime = False;                                                   
@@ -49,23 +47,18 @@ class C45:
     def fetcher(self):       
         with open(self.names, "r") as file:
             parser = MyHTMLParser()
+            #HTML Parser
             for line in file:
-                parser.feed(line)
-                
+                parser.feed(line)                
             for key in parser.categoryValues.keys():
                 print key
                 print(parser.categoryValues[key])
-            #classes = file.readline()
-            #self.classes = [x.strip() for x in classes.strip(",")]
-            #for line in file:
-             #   [attribute, values] = [x.strip() for x in line.split(":")]
             for attributeKey in parser.categoryValues.keys():
                 values = []
-                for pairs in parser.categoryValues[key]:
+                for pairs in parser.categoryValues[attributeKey]:
                     values.append(pairs[0])
-                self.avals[attributeKey] = values                                 
-              #  values = [x.strip() for x in values.split(",")]
-              #  self.avals[attribute] = values
+                self.avals[attributeKey] = values   
+                print(values)                              
         self.atts = len(self.avals.keys())
         self.att = list(self.avals.keys())       
         lineCount = 0
