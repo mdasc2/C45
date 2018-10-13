@@ -64,7 +64,8 @@ class C45:
             
             for line in file:
                 parser.feed(line) 
-            self.classes = parser.categoryValues.keys()
+            
+            classAttributes = []
                            
             for key in parser.categoryValues.keys():
                 print key
@@ -73,8 +74,10 @@ class C45:
                 values = []
                 for pairs in parser.categoryValues[attributeKey]:
                     values.append(pairs[0])
-                self.avals[attributeKey] = values   
-                print(values)                              
+                    classAttributes.append(pairs[0])
+                self.avals[attributeKey] = values 
+                 
+        self.classes = classAttributes
         self.atts = len(self.avals.keys())
         self.att = list(self.avals.keys())       
         lineCount = 0
@@ -108,7 +111,11 @@ class C45:
         else:
             (best, bestt, split) = self.splitter(data, attributes)
             rest = attributes[:]
+            print "attributes"
+            print attributes
+            print best
             rest.remove(best)
+
             node = Node(False, best, bestt)
             node.children = [self.rTree(subset, rest)for subset in split]
             return node
@@ -193,9 +200,8 @@ class C45:
         if S == 0:
             return 0
         nclass = [0 for i in self.classes]
-        for i in self.classes:
-            print "classes"
-            print i
+        print "classes"
+        print (self.classes)
         for i in dat:
             print ("dat")
             print (i)
