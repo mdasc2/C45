@@ -1,8 +1,9 @@
 import math
 import pdb
-import HTMLParser
+import html.parser
+import xml.dom.minidom
 
-class MyHTMLParser( HTMLParser.HTMLParser):
+class MyHTMLParser( html.parser.HTMLParser):
     categoryValues = {}
     currentCategory = ""
     firstTime = True;
@@ -47,7 +48,7 @@ class Node:
         self.children = []
 
 class C45:
-    def __init__(self, data, names):
+    def __init__(self, data, names,document):
         self.data = data
         self.names = names
         self.avals = {}
@@ -56,19 +57,20 @@ class C45:
         self.classes = []
         self.atts = -1
         self.tree = None
+        self.xmlDoc = document
+        self.currentSelection = ""
 
     def fetcher(self):       
         with open(self.names, "r") as file:
             parser = MyHTMLParser()
-            #HTML Parser
-            
+            #HTML Parser            
             for line in file:
                 parser.feed(line) 
             
             classAttributes = []
                            
             for key in parser.categoryValues.keys():
-                print key
+                print (key)
                 print(parser.categoryValues[key])
             for attributeKey in parser.categoryValues.keys():
                 values = []
@@ -76,199 +78,223 @@ class C45:
                     values.append(pairs[0])
                     classAttributes.append(pairs[0])
                 self.avals[attributeKey] = values 
-                 
+                               
         #self.classes = classAttributes
-        self.classes = parser.categoryValues.keys()
+        self.classes = list(parser.categoryValues.keys())
         self.atts = len(self.avals.keys())
         self.att = list(self.avals.keys())       
         lineCount = 0
+        
+        print(self.classes)
         
         with open(self.data, "r") as file:
             for line in file:
                 lineCount += 1
                 if(lineCount > 3):
-                    row = [x.strip() for x in line.split(",")]
+                    row = [x.strip()  for x in line.split(",")]
                     if row != [] or row != [""]:
+                        print(row)
                         self.items.append(row)
-    
-    def processData(self):
-        for index in enumerate(self.items):
-            for aindex in range(self.atts):
-                if(not self.discrete(self.att[aindex])):
-                    self.items[index][aindex] = float(self.items[index][aindex])
-    
-    def generateTree(self):
-        print "generateTree"
-        self.tree = self.rTree(self.items, self.att)
+    def calculateEntropyD(self, items):
+        obamaCount = 0
+        mccainCount = 0
+        print('lengthofitems')
+        print(len(items))
+        if(len(items) == 0):
+            return 0
+        print('items')
+        print(items)
+        for item in items:
+            if(item[11] == 'Obama'):
+                obamaCount += 1
+            elif(item[11] == 'McCain'):
+                mccainCount += 1
 
-    def rTree(self, data, attributes):
-        print "rTree"
-        same = self.allsame(data)
-        if len(data) == 0:
-            return Node(True, "Fail", None)
-        elif same is not False:
-            return Node(True, same, None)
-        elif len(attributes) == 0:
-            majClass = self.getMajClass(data)
-            return Node(True, majClass, None)
-        else:
-            print "data before split"
-            print data
-            (best, bestt, split) = self.splitter(data, attributes)
-            rest = attributes[:]
-            print "attributes"
-            print attributes
-            print best
-            print bestt
-            rest.remove(best)
-
-            node = Node(False, best, bestt)
-            node.children = [self.rTree(subset, rest)for subset in split]
-            return node
-
-    def getMajClass(self, data):
-        freq = [0] * len(self.classes)
-        for r in data:
-            index = self.classes.index(r[-1])
-            freq[index] += 1
-        maxIndex = freq.index(max(freq))
-        return self.classes[maxIndex]
-
-    def allsame(self, data):
-        for r in data:
-            if r[-1] != data[0][-1]:
-                return False
-        return data[0][-1]
-
-    def discrete(self, attribute):
-        if attribute not in self.att:
-            raise ValueError("Attributes not listed")
-        elif len(self.avals[attribute]) == 1 and self.avals[attribute][0] == "continuous":
-            return False
-        else:
-            return True
-    
-    def splitter(self, data, Attributes):
-        split = []
-        maxEnt = -1 * float("inf")
-        ideala = -1
-        idealt = None
-        print "splitter"
-        print(data)
-        print "splitter attributes:"
-        print Attributes
+        obamaPR = obamaCount/(float(len(items)))
+        mccainPR =  mccainCount/ (float(len(items)))
         
-        for a in Attributes:
-            index = self.att.index(a)
-            if self.discrete(a):
-                values = self.avals[a]
-                print "splitterValues"
-                print(values)
-                subsets = [[] for a in values]
-                for r in data:
-                    print(r)
-                    for i in range(len(values)):
-                        if r[i] == values[i]:
-                            subsets[i].append(r)
-                            break
-                e = self.gain(data, subsets)
-                print("gain:")
-                print(e)                
-                if e > maxEnt:
-                    maxEnt = e
-                    split = subsets
-                    ideala = a
-                    idealt = None
+        
+        if(obamaCount == 0 or mccainCount == 0):
+            return 0
+
+        entropy = (-(obamaPR) * math.log2(obamaPR)) - ((mccainPR) * math.log2(mccainPR))
+        
+        return entropy
+    def getListOfSlices(self, currentClassIndex, classValues, items):
+        listOfSlices = list()
+        classValuesLen = len(classValues)
+        for i in range(0, classValuesLen ):
+            listOfSlices.append([])
+         
+        for i in range(0,classValuesLen):  
+            for item in items:        
+                    if(item[currentClassIndex + 1] == classValues[i]):
+                        sliceList = listOfSlices[i]
+                        sliceList.append(item)
+                        listOfSlices[i] = sliceList 
+                                            
+        
+        return listOfSlices                        
+    def calculateEntropyAI(self,listOfSlices,items): 
+        print ('entropyAI')        
+        totalAmountOfItems = len(items) 
+        totalEntropy = 0       
+        entropies = []
+                
+        for sliceList in listOfSlices:
+            entropy = self.calculateEntropyD(sliceList)
+            print('entropy')
+            print(entropy)
+            entropies.append(entropy)
+                
+        entropyIndex = 0
+        for entropy in entropies:
+            sliceLen = len(listOfSlices[entropyIndex])                   
+            sliceListEntrophy = entropy * (float(sliceLen)/ float(totalAmountOfItems))
+            print('slice')
+            print(sliceListEntrophy)
+            totalEntropy += sliceListEntrophy  
+            entropyIndex += 1  
+        
+        print('total entrophy')
+        print(totalEntropy)
+        
+        return totalEntropy  
+     
+    def mostFrequentItems(self,items):   
+        obamaCount = 0
+        mccainCount = 0
+        
+        for item in items:
+            if(item[11] == "Obama"):
+                obamaCount += 1
             else:
-                data.sort(key = lambda x : x[index])
-                for j in range(0, len(data) - 1):
-                    if data[j][index] != data[j + 1][index]:
-                        threshold = (data[j][index] + data[j + 1][index]) / 2
-                        less = []
-                        great = []
-                        for row in data:
-                            if(row[index] > threshold):
-                                great.append(row)
-                            else:
-                                less.append(row)
-                        e = self.gain(data, [less, great])
-                        print("gain:")
-                        print(e)
-                        if e >= maxEnt:
-                            split = [less, great]
-                            maxEnt = e
-                            ideala = a
-                            idealt = threshold
-        return (ideala, idealt, split)
-
-    def gain(self, set, subsets):
-        S = len(set)
-        prior = self.entropy(set)
-        print prior
-        weights = [len(subset) / S for subset in subsets]
-        print(len(subset))
-        after = 0
-        for i in range(len(subsets)):
-            after += weights[i] * self.entropy(subsets[i])
-            print "gain weights"
-            print weights[i]
-        totalGain = prior - after
-        return totalGain
-
-    def entropy(self, dat):
-        S = len(dat)
-        if S == 0:
-            return 0
-        nclass = [0 for i in self.classes]
-        print "classes"
-        print (self.classes)
-        for i in dat:
-            print ("dat")
-            print (i)
-            classIndex = list(self.classes).index(i[-1])
-            nclass[classIndex] += 1
-        nclass = [x / S for x in nclass]
-        ent = 0
-        for num in nclass:
-            ent += num * self.logger(num)
-        return ent * -1
-
-    def logger(self, x):
-        if x == 0:
-            return 0
+                mccainCount += 1
+        
+        if(obamaCount > mccainCount):
+            return 'Obama'
+        elif (obamaCount < mccainCount):
+            return 'McCain'
         else:
-            return math.log(x, 2)
-
-    def printTree(self):
-        self.printNode(self.tree)
-
-    def printNode(self, node, indent = ""):
-        if not node.isLeaf:
-            if node.threshold is None:
-                for index, child in enumerate(node.children):
-                    if child.isLeaf:
-                        print('{} {} = {} : {}'.format(indent, node.label, self.atts[index], child.label))
-                    else:
-                        print('{} {} = {} :'.format(indent, node.label, self.atts[index]))
-                        self.printNode(child, indent + "    ")
+            return "Neither"
+        
+    def homogeneousCheck(self,items):
+        if(len(items) == 0):
+            return False                
+        homoCheck = items[0][11]
+        print('homo')
+        print(homoCheck)
+        
+        for item in items:
+            if(item[11] != homoCheck):
+                return False
+        return True
+               
+    def splitter(self, items, excludedClasses,node):
+        
+        if(self.homogeneousCheck(items)):
+            print('Im Homo')
+            print('decision : ' + items[0][11])
+            newNode = self.xmlDoc.createElement('decision')
+            newNode.setAttribute('end', items[0][11])
+            node.appendChild(newNode)
+        
+        elif(len(excludedClasses) ==  len(self.classes)):
+            print('decision :' + items[0][11]) 
+            newNode = self.xmlDoc.createElement('decision')
+            newNode.setAttribute('end', items[0][11])
+            node.appendChild(newNode)
+        elif(len(items) == 0):
+            newNode = self.xmlDoc.createElement('decision')
+            newNode.setAttribute('end', self.currentSelection)
+            node.appendChild(newNode)                     
+        else:
+            self.currentSelection = items[0][11]
+            entropyD = self.calculateEntropyD(items) 
+            print("topLevel EntropyD")
+            print(entropyD)
+            maxAttributeIndex = 0
+            maxAttribute = ""
+            maxGain = 0.0 
+            maxListOfSlices = []
+            classToSplitOn = " "
+             
+            print('items')
+            print(items)          
+            for i in range(0, self.classes.__len__() - 1):
+                
+                if( i not in excludedClasses):           
+                    print('currentClass')
+                    print(self.classes[i])
+                    currentClass = self.classes[i]
+                    currentClassIndex = i
+                    
+                    classValues = self.avals[currentClass]
+                    listOfSlices = self.getListOfSlices(currentClassIndex, classValues, items)
+                    print('list of slices')
+                    print(listOfSlices)
+                    totalEntropy = self.calculateEntropyAI(listOfSlices,items)
+                    
+                    informationGain = entropyD - totalEntropy
+                    print('information gain')
+                    print(informationGain)
+                    
+                    if(informationGain > maxGain):
+                        maxListOfSlices = listOfSlices
+                        classToSplitOn = currentClass
+                        maxAttributeIndex = i
+                        maxAttribute = self.classes[maxAttributeIndex]
+                        maxGain = informationGain   
+                    excludedClasses[maxAttributeIndex] = True  
+            
+            ## If the algorithm cannot choose an attribute to split on
+            if(classToSplitOn == " "):
+                mostFrequentItem = self.mostFrequentItems(items)
+                newNode = self.xmlDoc.createElement('decision')
+                newNode.setAttribute('end', items[0][11])
+                node.appendChild(newNode)                       
             else:
-                left = node.children[0]
-                right = node.children[1]
-                if left.isLeaf:
-                    print('{} {} <= {} : {}'.format(indent, node.label, str(node.threshold), left.label))
-                else:
-                    print('{} {} <= {} :'.format(indent, node.label, str(node.threshold)))
-                    self.printNode(left, indent + "    ")
-                if right.isLeaf:
-                    print('{} {} > {} : {}'.format(indent, node.label, str(node.threshold), right.label))
-                else:
-                    print('{} {} > {} : '.format(indent, node.label, str(node.threshold)))
-                    self.printNode(right, indent + "    ")
+                newNode = self.xmlDoc.createElement('node')
+                newNode.setAttribute('var', classToSplitOn)
+                node.appendChild(newNode)            
+                                
+                attributeIndex = 0
+                classValues = self.avals[classToSplitOn]
+           
 
+                print('firstrun')
+                print(maxAttribute)
+                print(maxGain)
+                
+
+                print('listS')
+                print(listOfSlices)        
+                for list in maxListOfSlices:
+                    edge = self.xmlDoc.createElement('edge')
+                    print('classvalues')
+                    print(classValues)
+                    print(len(listOfSlices))  
+                    print(attributeIndex)                      
+                    edge.setAttribute('var ', classValues[attributeIndex])
+                    edge.setAttribute('num', str(attributeIndex + 1))           
+                    newNode.appendChild(edge)  
+                    self.splitter(list, excludedClasses, edge) 
+                    attributeIndex += 1                    
+                         
+
+                   
+    def processData(self, node):
+        excludedClasses = {}       
+        self.splitter(self.items,excludedClasses,node)
 
 if __name__ == "__main__":
-    c = C45("tree03/tree03-20-words.csv", "domain.xml")
+    document = xml.dom.minidom.Document() 
+    node = document.createElement('Tree')
+    node.setAttribute('known', "Something")
+    document.appendChild(node)
+    
+    c = C45("tree03/tree03-20-words.csv", "domain.xml",document)
     c.fetcher()
-    c.processData()
-    c.generateTree()
-    ##c.printTree()
+    c.processData(node)   
+    print (document.toprettyxml())
+    
